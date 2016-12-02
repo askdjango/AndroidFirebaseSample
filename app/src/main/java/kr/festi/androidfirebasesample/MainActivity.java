@@ -8,11 +8,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     GoogleApiClient mGoogleApiClient;
 
     String mUsername;
+    String mPhotoUrl;
 
     RecyclerView mChatMessageListRecyclerView;
     View mChatMessageListEmptyView;
@@ -63,10 +68,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         else {
             mUsername = mFirebaseUser.getDisplayName();
             if ( mFirebaseUser.getPhotoUrl() != null ) {
-                String photoUrl = mFirebaseUser.getPhotoUrl().toString();
+                mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
 
                 ImageView photoImageView = (ImageView) findViewById(R.id.photo_imageview);
-                Glide.with(this).load(photoUrl).into(photoImageView);
+                Glide.with(this).load(mPhotoUrl).into(photoImageView);
             }
 
             TextView usernameTextView = (TextView) findViewById(R.id.username_textview);
@@ -129,6 +134,36 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         mChatMessageListRecyclerView.setLayoutManager(mLinearLayoutManager);
         mChatMessageListRecyclerView.setAdapter(mFirebaseAdapter);
+
+        /*
+         * Chat Message EditText
+         */
+        final EditText messageEditText = (EditText) findViewById(R.id.messageEditText);
+        final Button messageSendbutton = (Button) findViewById(R.id.mesageSendButton);
+        messageEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                boolean isEnable = charSequence.toString().trim().length() > 0;
+                messageSendbutton.setEnabled(isEnable);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+        messageSendbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String message = messageEditText.getText().toString();
+                ChatMessage chatMessage = new ChatMessage(message, mUsername, mPhotoUrl);
+                mFirebaseDatabaseReference.child(CHAT_MESSAGES_CHILD).push().setValue(chatMessage);
+                messageEditText.setText("");
+            }
+        });
     }
 
     @Override
