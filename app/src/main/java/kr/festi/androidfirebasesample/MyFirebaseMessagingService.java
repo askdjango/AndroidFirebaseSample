@@ -21,21 +21,27 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         if ( remoteMessage.getData().size() > 0 ) {
             Log.d(TAG, "FCM Data Message : " + remoteMessage.getData());
+            String messageBody = remoteMessage.getData().get("message_body");
+            if ( messageBody != null ) {
+                toast(messageBody);
+            }
         }
 
         if ( remoteMessage.getNotification() != null ) {
             final String messageBody = remoteMessage.getNotification().getBody();
-
             Log.d(TAG, "FCM Notification Message Body : " + messageBody);
-
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), messageBody, Toast.LENGTH_SHORT).show();
-                }
-            });
+            toast(messageBody);
         }
+    }
+
+    void toast(final String message) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 
