@@ -7,6 +7,9 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,26 +39,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        findViewById(R.id.logout_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                new AlertDialog.Builder(MainActivity.this)
-                        .setMessage("Signout ?")
-                        .setPositiveButton("signout", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                mFirebaseAuth.signOut();
-                                Auth.GoogleSignInApi.signOut(mGoogleApiClient);
-                                LoginManager.getInstance().logOut();
-
-                                Intent intent = new Intent(MainActivity.this, SignInActivity.class);
-                                startActivity(intent);
-                                finish();
-                            }
-                        }).show();
-            }
-        });
-
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseUser = mFirebaseAuth.getCurrentUser();
         if ( mFirebaseUser == null ) {
@@ -84,6 +67,38 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .enableAutoManage(this, this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+
+        if ( itemId == R.id.sign_out_menu ) {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setMessage("Signout ?")
+                    .setPositiveButton("signout", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mFirebaseAuth.signOut();
+                            Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+                            LoginManager.getInstance().logOut();
+
+                            Intent intent = new Intent(MainActivity.this, SignInActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
+                    }).show();
+
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
