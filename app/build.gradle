@@ -32,6 +32,7 @@ dependencies {
     compile 'com.github.bumptech.glide:glide:3.7.0'
 
     compile 'com.google.firebase:firebase-messaging:10.0.0'
+    compile 'com.sdsmdg.tastytoast:tastytoast:0.1.0'
 
     testCompile 'junit:junit:4.12'
 }
