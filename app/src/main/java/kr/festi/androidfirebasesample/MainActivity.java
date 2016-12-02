@@ -6,6 +6,8 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,11 +19,14 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.facebook.login.LoginManager;
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
@@ -32,7 +37,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     String mUsername;
 
+    RecyclerView mChatMessageListRecyclerView;
+    View mChatMessageListEmptyView;
+    LinearLayoutManager mLinearLayoutManager;
+    DatabaseReference mFirebaseDatabaseReference;
+    FirebaseRecyclerAdapter<ChatMessage, ChatMessageViewHolder> mFirebaseAdapter;
+
     final String TAG = MainActivity.class.getName();
+    final String CHAT_MESSAGES_CHILD = "chat_messages";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +79,56 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .enableAutoManage(this, this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
+
+        /*
+         * Firebase Realtime Database
+         */
+        mChatMessageListRecyclerView = (RecyclerView) findViewById(R.id.messageListRecyclerView);
+        mChatMessageListEmptyView = findViewById(R.id.messageListEmptyView);
+        mChatMessageListEmptyView.setVisibility(View.GONE);  // FIXME
+
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mLinearLayoutManager.setStackFromEnd(true);
+        mChatMessageListRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<ChatMessage, ChatMessageViewHolder>(
+                ChatMessage.class,
+                R.layout.item_chat_message,
+                ChatMessageViewHolder.class,
+                mFirebaseDatabaseReference.child(CHAT_MESSAGES_CHILD)) {
+            @Override
+            protected void populateViewHolder(ChatMessageViewHolder viewHolder, ChatMessage chatMessage, int position) {
+                viewHolder.messageTextView.setText(chatMessage.message);
+                viewHolder.nameTextView.setText(chatMessage.name);
+                if ( chatMessage.photoUrl != null ) {
+                    viewHolder.photoImageView.setVisibility(View.VISIBLE);
+                    Glide.with(MainActivity.this)
+                            .load(chatMessage.photoUrl)
+                            .into(viewHolder.photoImageView);
+                }
+                else {
+                    viewHolder.photoImageView.setVisibility(View.GONE);
+                }
+            }
+        };
+        mFirebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onItemRangeChanged(int positionStart, int itemCount) {
+                super.onItemRangeChanged(positionStart, itemCount);
+
+                int chatMessageCount = mFirebaseAdapter.getItemCount();
+                int lastVisiblePosition = mLinearLayoutManager.findLastCompletelyVisibleItemPosition();
+                if ( lastVisiblePosition == -1 ||
+                        (positionStart >= (chatMessageCount - 1) &&
+                                (lastVisiblePosition == (positionStart - 1))) ) {
+                    mChatMessageListRecyclerView.scrollToPosition(positionStart);
+                }
+            }
+        });
+
+        mChatMessageListRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mChatMessageListRecyclerView.setAdapter(mFirebaseAdapter);
     }
 
     @Override
@@ -104,5 +166,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "onConnectionFailed:" + connectionResult);
+    }
+
+    public static class ChatMessageViewHolder extends RecyclerView.ViewHolder {
+        TextView messageTextView;
+        TextView nameTextView;
+        ImageView photoImageView;
+
+        public ChatMessageViewHolder(View itemView) {
+            super(itemView);
+            messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
+            nameTextView = (TextView) itemView.findViewById(R.id.nameTextView);
+            photoImageView = (ImageView) itemView.findViewById(R.id.photoImageView);
+        }
     }
 }
