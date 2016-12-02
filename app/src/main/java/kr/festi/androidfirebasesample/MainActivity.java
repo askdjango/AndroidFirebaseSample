@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 mFirebaseAuth.signOut();
                                 Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+                                LoginManager.getInstance().logOut();
 
                                 Intent intent = new Intent(MainActivity.this, SignInActivity.class);
                                 startActivity(intent);

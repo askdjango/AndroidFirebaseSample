@@ -7,6 +7,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -15,6 +20,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -26,6 +32,9 @@ public class SignInActivity extends AppCompatActivity implements GoogleApiClient
 
     SignInButton mSigninGoogleButton;
     GoogleApiClient mGoogleApiClient;
+
+    LoginButton mSigninFacebookButton;
+    CallbackManager mFacebookCallbackManager;
 
     static final String TAG = SignInActivity.class.getName();
     static final int RC_GOOGLE_SIGN_IN = 9001;
@@ -79,6 +88,31 @@ public class SignInActivity extends AppCompatActivity implements GoogleApiClient
                 .enableAutoManage(this, this)
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
+
+        /*
+         * Facebook Login
+         */
+        mFacebookCallbackManager = CallbackManager.Factory.create();
+
+        mSigninFacebookButton = (LoginButton) findViewById(R.id.sign_in_facebook_button);
+        mSigninFacebookButton.setReadPermissions("email", "public_profile");
+        mSigninFacebookButton.registerCallback(mFacebookCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                AuthCredential credential = FacebookAuthProvider.getCredential(loginResult.getAccessToken().getToken());
+                mFirebaseAuth.signInWithCredential(credential);
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "Facebook login canceled.");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.d(TAG, "Facebook Login Error", error);
+            }
+        });
     }
 
     @Override
@@ -102,6 +136,7 @@ public class SignInActivity extends AppCompatActivity implements GoogleApiClient
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        mFacebookCallbackManager.onActivityResult(requestCode, resultCode, data);
 
         if ( requestCode == RC_GOOGLE_SIGN_IN ) {
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
