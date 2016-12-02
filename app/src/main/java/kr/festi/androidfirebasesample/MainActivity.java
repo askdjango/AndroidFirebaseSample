@@ -8,9 +8,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
@@ -26,7 +28,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     GoogleApiClient mGoogleApiClient;
 
     String mUsername;
-    String mPhotoUrl;
 
     final String TAG = MainActivity.class.getName();
 
@@ -67,15 +68,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         else {
             mUsername = mFirebaseUser.getDisplayName();
             if ( mFirebaseUser.getPhotoUrl() != null ) {
-                mPhotoUrl = mFirebaseUser.getPhotoUrl().toString();
+                String photoUrl = mFirebaseUser.getPhotoUrl().toString();
+
+                ImageView photoImageView = (ImageView) findViewById(R.id.photo_imageview);
+                Glide.with(this).load(photoUrl).into(photoImageView);
             }
 
             TextView usernameTextView = (TextView) findViewById(R.id.username_textview);
             usernameTextView.setText(mUsername);
 
             Toast.makeText(this, mUsername + "님 환영합니다.", Toast.LENGTH_SHORT).show();
-
-            // ImageView photoImageView = (ImageView) findViewById(R.id.photo_imageview);
         }
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
